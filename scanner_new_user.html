@@ -1,0 +1,214 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Cycles</title>
+    <link rel='icon' type='images/png' href='https://upload.wikimedia.org/wikipedia/en/thumb/0/0f/Indian_Institute_of_Technology_Hyderabad_logo.svg/300px-Indian_Institute_of_Technology_Hyderabad_logo.svg.png'>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        /* In order to place the tracking correctly */
+        canvas.drawing, canvas.drawingBuffer {
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        h1 {
+            width: 100%;
+            text-align: center;
+            padding: 15px;
+            margin: 10px;
+            margin-left: auto;
+            margin-right: auto;
+            color: yellow;
+            float: left;
+            background-color: maroon;
+        }
+        h2 {
+            width: 100%;
+            text-align: center;
+            padding: 15px;
+            margin: 10px;
+            margin-left: auto;
+            margin-right: auto;
+            color: yellow;
+            float:left;
+            background-color: maroon;
+
+        }
+
+        #btn {
+            text-align: center;
+            border-radius: 12px;
+            background-color: black;
+            color:  white;
+            display: inline-block;
+            width: 40%;
+            padding: 16px;
+            margin-top: 50px;
+            font-size: 25px
+        }
+        .center {
+            text-align: center;
+        }
+        #made-by {
+            font-size: 20px;
+            font-family: arial;
+            border:3px dotted brown;
+            border-radius: 10px;
+            padding: 20px 50px 20px 10px;
+            float:right;
+            margin-right: 10px;
+            background: yellow;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="center">
+        <h1>Welcome To IITH</h1>
+        <h2>Welcome To The Santander Cycle System<br>NEW USER</h2>
+        <!-- Div to show the scanner -->
+        <div id="scanner-container"></div>
+        <input type="button" id="btn" value="Start/Stop the scanner" />
+
+        <!-- Include the image-diff library -->
+        <script src="https://cdn.rawgit.com/serratus/quaggaJS/0420d5e0/dist/quagga.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.8.0/dist/JsBarcode.all.min.js"></script>
+
+        <script>
+            var _scannerIsRunning = false;
+
+            function startScanner() {
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: document.querySelector('#scanner-container'),
+                        constraints: {
+                            width: 480,
+                            height: 320,
+                            facingMode: "environment"
+                        },
+                    },
+                    decoder: {
+                        readers: [
+                            "code_128_reader",
+                            "ean_reader",
+                            "ean_8_reader",
+                            "code_39_reader",
+                            "code_39_vin_reader",
+                            "codabar_reader",
+                            "upc_reader",
+                            "upc_e_reader",
+                            "i2of5_reader"
+                        ],
+                        debug: {
+                            showCanvas: true,
+                            showPatches: true,
+                            showFoundPatches: true,
+                            showSkeleton: true,
+                            showLabels: true,
+                            showPatchLabels: true,
+                            showRemainingPatchLabels: true,
+                            boxFromPatches: {
+                                showTransformed: true,
+                                showTransformedBox: true,
+                                showBB: true
+                            }
+                        }
+                    },
+
+                }, function (err) {
+                    if (err) {
+                        console.log(err);
+                        return
+                    }
+
+                    console.log("Initialization finished. Ready to start");
+                    Quagga.start();
+
+                    // Set flag to is running
+                    _scannerIsRunning = true;
+                });
+
+                Quagga.onProcessed(function (result) {
+                    var drawingCtx = Quagga.canvas.ctx.overlay,
+                    drawingCanvas = Quagga.canvas.dom.overlay;
+
+                    if (result) {
+                        if (result.boxes) {
+                            drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
+                            result.boxes.filter(function (box) {
+                                return box !== result.box;
+                            }).forEach(function (box) {
+                                Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "green", lineWidth: 2 });
+                            });
+                        }
+
+                        if (result.box) {
+                            Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "#00F", lineWidth: 2 });
+                        }
+
+                        if (result.codeResult && result.codeResult.code) {
+                            Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
+                        }
+                    }
+                });
+
+
+                Quagga.onDetected(function (result) {
+                    console.log("Barcode detected and processed : [" + result.codeResult.code + "]", result);
+                    var startDate = new Date();
+                    var endDate = new Date();
+                    if(startDate.getHours()>=20) {
+                        endDate.setDate(startDate.getDate()+1);
+                        endDate.setHours(startDate.getHours()-20)
+                    }
+                    else
+                        endDate.setHours(startDate.getHours()+4);
+                    var person = result.codeResult.code + "," + startDate +"," + endDate;                   
+                    window.location.assign("php_new_user.php?person="+person);
+
+                });
+            }
+
+
+            // Start/stop scanner
+            document.getElementById("btn").addEventListener("click", function () {
+                if (_scannerIsRunning) {
+                    Quagga.stop();
+                } else {
+                    startScanner();
+                }
+            }, false);
+        </script>
+
+       <img id="barcode"/>
+       <script type="text/javascript">
+       	
+       </script>
+    </div>
+    <footer>
+       <p id='made-by'>
+            <strong>
+            Made by:</strong>
+            <br>
+            Abhishek Jain
+            <br>
+            Deeptanshu Sankhwar
+            <br>
+            Shraiysh Vaishay
+            <br>
+            Satyam Shukla
+            <br>
+            Nikhil Choudhary
+            <br>
+            Anshul Meshram
+        </p>
+    </footer>
+</body>
+
+</html>
